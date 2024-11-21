@@ -1106,7 +1106,7 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
     for (let tab of gBrowser.tabs) {
       if (tab.getAttribute('zen-workspace-id') === window.uuid || !tab.hasAttribute('zen-workspace-id')
       ) {
-        if (!firstTab && (onInit || !tab.pinned)) {
+        if (!firstTab && (onInit)) {
           firstTab = tab;
         } else if (gBrowser.selectedTab === tab) {
           // If the selected tab is already in the workspace, we don't want to change it
@@ -1123,7 +1123,9 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
     if (firstTab) {
       // Don't change the selected tab if it's an essential tab, it becomes annoying
       if (!gBrowser.selectedTab.hasAttribute('zen-essential')) {
-        gBrowser.selectedTab = this._lastSelectedWorkspaceTabs[window.uuid] ?? firstTab;
+        const lastSelected = this._lastSelectedWorkspaceTabs[window.uuid];
+        // Only use firstTab as fallback if lastSelected is undefined
+        gBrowser.selectedTab = lastSelected ?? firstTab;
       }
     }
     if (typeof firstTab === 'undefined' && !onInit) {
@@ -1255,10 +1257,12 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
     const parent = browser.ownerGlobal;
     let tab = gBrowser.getTabForBrowser(browser);
     let workspaceID = tab.getAttribute('zen-workspace-id');
-    if (!workspaceID || tab.pinned) {
+    // Modified: Track pinned tabs as well
+    if (!workspaceID) {
       return;
     }
     let activeWorkspace = await parent.ZenWorkspaces.getActiveWorkspace();
+    // Store the last selected tab regardless of pinned state
     this._lastSelectedWorkspaceTabs[workspaceID] = tab;
     if (workspaceID === activeWorkspace.uuid) {
       return;
